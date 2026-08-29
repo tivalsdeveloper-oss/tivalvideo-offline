@@ -11,8 +11,8 @@ def test_presets():
     assert (VideoConfig.landscape().width, VideoConfig.landscape().height) == (1920, 1080)
 
 
-def test_requires_images():
-    with pytest.raises(ValueError, match="At least one image"):
+def test_requires_visual_content():
+    with pytest.raises(ValueError, match="at least one image or typing_text"):
         VideoMaker().create([], "hello")
 
 
@@ -34,3 +34,33 @@ def test_ffmpeg_error_becomes_video_error(tmp_path: Path):
         pytest.raises(VideoError, match="FFmpeg failed"),
     ):
         maker._run("-version")
+
+
+def test_rejects_narration_and_audio(tmp_path: Path):
+    image = tmp_path / "image.png"
+    audio = tmp_path / "voice.wav"
+    image.touch()
+    audio.touch()
+    with pytest.raises(ValueError, match="narration or audio"):
+        VideoMaker().create([image], "hello", audio=audio)
+
+
+def test_rejects_unknown_background():
+    with pytest.raises(ValueError, match="Unknown background"):
+        VideoMaker().create(typing_text="hello", background="space")
+
+
+def test_built_in_background(tmp_path: Path):
+    config = VideoConfig(width=64, height=96)
+    canvas = VideoMaker(config)._background_canvas("ocean", None)
+    assert canvas.size == (64, 96)
+
+
+def test_custom_background_is_cropped(tmp_path: Path):
+    from PIL import Image
+
+    source = tmp_path / "background.png"
+    Image.new("RGB", (20, 20), "red").save(source)
+    config = VideoConfig(width=64, height=96)
+    canvas = VideoMaker(config)._background_canvas("midnight", source)
+    assert canvas.size == (64, 96)
