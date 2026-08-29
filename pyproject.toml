@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tivalvideo-offline"
+version = "0.1.0"
+description = "Create narrated vertical videos completely offline with FFmpeg and Piper"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Tivalsdeveloper" }]
+keywords = ["video", "shorts", "ffmpeg", "piper", "offline", "text-to-speech"]
+dependencies = [
+  "imageio-ffmpeg>=0.5.1",
+  "piper-tts>=1.3.0",
+  "platformdirs>=4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/tivalsdeveloper-oss/tivalvideo-offline"
+Documentation = "https://github.com/tivalsdeveloper-oss/tivalvideo-offline#readme"
+Repository = "https://github.com/tivalsdeveloper-oss/tivalvideo-offline"
+Issues = "https://github.com/tivalsdeveloper-oss/tivalvideo-offline/issues"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.8"]
+
+[project.scripts]
+tivalvideo = "tivalvideo.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tivalvideo"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
