@@ -4,5 +4,4 @@ from .maker import VideoConfig, VideoError, VideoMaker, create_video
 from .tools import ToolManager
 
 __all__ = ["ToolManager", "VideoConfig", "VideoError", "VideoMaker", "create_video"]
-__version__ = "0.1.0"
-
+__version__ = "0.2.0"
