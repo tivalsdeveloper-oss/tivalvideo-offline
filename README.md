@@ -1,6 +1,8 @@
-# TivalVideo Offline
+# TivalVideo Offline 0.2.0
 
 Create narrated vertical Shorts or landscape videos from images, entirely offline after the first setup. TivalVideo uses a managed FFmpeg executable for video rendering and Piper for local AI narration.
+
+Version 0.2.0 adds auto-typing text videos, recorded audio, background music, four built-in backgrounds, and custom background images.
 
 ## Install
 
@@ -30,6 +32,49 @@ create_video(
 )
 ```
 
+## Auto-typing video
+
+Create a complete Short without supplying lesson images:
+
+```python
+from tivalvideo import create_video
+
+create_video(
+    typing_text="Welcome to my Python lesson!",
+    narration="Welcome to my Python lesson.",
+    background="ocean",
+    output="typing-short.mp4",
+)
+```
+
+Built-in background choices are `midnight`, `ocean`, `sunset`, and `paper`.
+
+Use your own background image:
+
+```python
+create_video(
+    typing_text="Learn Python step by step",
+    audio="my-recorded-voice.mp3",
+    background_image="my-background.jpg",
+    output="custom-short.mp4",
+)
+```
+
+## Recorded voice and music
+
+Use recorded voice instead of AI narration and optionally mix in music:
+
+```python
+create_video(
+    images=["lesson1.png", "lesson2.png"],
+    audio="voice.wav",
+    music="background.mp3",
+    output="lesson.mp4",
+)
+```
+
+Do not pass both `narration` and `audio`; they are two alternative voice sources.
+
 ## Terminal example
 
 Create `narration.txt`, then run:
@@ -57,6 +102,9 @@ tivalvideo create *.png -n narration.txt -o youtube.mp4 --landscape
 - Automatic fade transitions
 - H.264 video and AAC audio
 - Automatic voice-model caching
+- Auto-typing text animation
+- MP3/WAV recorded voice and background music
+- Built-in and user-provided auto-typing backgrounds
 - Python API and terminal command
 
 ## Notes
@@ -66,4 +114,3 @@ tivalvideo create *.png -n narration.txt -o youtube.mp4 --landscape
 - Keep the voice model cached to remain fully offline.
 
 Powered by tivalsdeveloper.
-
