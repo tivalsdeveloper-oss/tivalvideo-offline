@@ -3,7 +3,14 @@ from unittest.mock import patch
 
 import pytest
 
-from tivalvideo import ToolManager, VideoConfig, VideoError, VideoMaker
+from tivalvideo import (
+    DEFAULT_VOICE,
+    VOICE_CATALOG,
+    ToolManager,
+    VideoConfig,
+    VideoError,
+    VideoMaker,
+)
 
 
 def test_presets():
@@ -25,6 +32,29 @@ def test_tool_paths(tmp_path: Path):
     tools = ToolManager(tmp_path)
     assert tools.model.name == "en_US-lessac-medium.onnx"
     assert tools.model_config.name.endswith(".onnx.json")
+
+
+def test_voice_catalog_and_selection(tmp_path: Path):
+    tools = ToolManager(tmp_path)
+    assert tools.selected_voice == DEFAULT_VOICE
+    assert "en_US-amy-medium" in VOICE_CATALOG
+    tools.select_voice("en_GB-alan-medium")
+    assert tools.model.name == "en_GB-alan-medium.onnx"
+    assert "/en/en_GB/alan/medium/" in VOICE_CATALOG["en_GB-alan-medium"].model_url
+
+
+def test_unknown_voice_is_rejected(tmp_path: Path):
+    with pytest.raises(ValueError, match="Unknown voice"):
+        ToolManager(tmp_path, voice="robot")
+
+
+def test_remove_voice(tmp_path: Path):
+    tools = ToolManager(tmp_path)
+    tools.voice_dir.mkdir(parents=True)
+    tools.model.write_bytes(b"voice")
+    assert tools.remove_voice(DEFAULT_VOICE)
+    assert not tools.voice_dir.exists()
+    assert not tools.remove_voice(DEFAULT_VOICE)
 
 
 def test_ffmpeg_error_becomes_video_error(tmp_path: Path):
