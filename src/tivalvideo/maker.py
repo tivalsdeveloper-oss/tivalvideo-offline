@@ -13,7 +13,7 @@ from typing import Callable
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from piper import PiperVoice, SynthesisConfig
 
-from .tools import ToolManager
+from .tools import DEFAULT_VOICE, ToolManager
 
 Progress = Callable[[str], None]
 
@@ -68,6 +68,7 @@ class VideoMaker:
         typing_text: str | None = None,
         background: str = "midnight",
         background_image: str | Path | None = None,
+        voice: str = DEFAULT_VOICE,
     ) -> Path:
         paths = self._existing_files(images or (), "image")
         audio_path = self._optional_file(audio, "audio")
@@ -80,15 +81,16 @@ class VideoMaker:
         if background not in self.BACKGROUNDS:
             choices = ", ".join(self.BACKGROUNDS)
             raise ValueError(f"Unknown background '{background}'. Choose: {choices}.")
-        if narration and narration.strip() and not self.tools.ready():
+        self.tools.select_voice(voice)
+        if narration and narration.strip() and not self.tools.ready(voice):
             self.progress("Required offline voice is missing; running one-time setup.")
-            self.tools.setup(self.progress)
+            self.tools.setup(self.progress, voice=voice)
 
         output_path = Path(output).expanduser().resolve()
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="tivalvideo-") as temp_name:
             temp = Path(temp_name)
-            voice_audio = self._prepare_voice(narration, audio_path, temp)
+            voice_audio = self._prepare_voice(narration, audio_path, temp, voice)
             main_duration = self._wav_duration(voice_audio) if voice_audio else None
             music_duration = self._media_duration(music_path, temp) if music_path else None
             target_duration = main_duration or music_duration
@@ -113,10 +115,10 @@ class VideoMaker:
         return output_path
 
     def _prepare_voice(self, narration: str | None, audio: Path | None,
-                       temp: Path) -> Path | None:
+                       temp: Path, voice: str) -> Path | None:
         if narration and narration.strip():
             output = temp / "narration.wav"
-            self._narrate(narration, output)
+            self._narrate(narration, output, voice)
             return output
         if audio:
             output = temp / "custom-audio.wav"
@@ -125,12 +127,12 @@ class VideoMaker:
             return output
         return None
 
-    def _narrate(self, text: str, output: Path) -> None:
-        self.progress("Generating offline AI narration...")
-        voice = PiperVoice.load(self.tools.model, self.tools.model_config)
+    def _narrate(self, text: str, output: Path, voice: str = DEFAULT_VOICE) -> None:
+        self.progress(f"Generating offline AI narration with {voice}...")
+        narrator = PiperVoice.load(self.tools.model_path(voice), self.tools.config_path(voice))
         synthesis = SynthesisConfig(length_scale=self.config.voice_speed)
         with wave.open(str(output), "wb") as wav_file:
-            voice.synthesize_wav(text, wav_file, syn_config=synthesis)
+            narrator.synthesize_wav(text, wav_file, syn_config=synthesis)
 
     def _render_typing(self, text: str, temp: Path, duration: float,
                        background: str, background_image: Path | None) -> Path:
@@ -308,10 +310,11 @@ def create_video(
     typing_text: str | None = None,
     background: str = "midnight",
     background_image: str | Path | None = None,
+    voice: str = DEFAULT_VOICE,
 ) -> Path:
     """Create a vertical Short or landscape video with sensible defaults."""
     config = VideoConfig.landscape() if landscape else VideoConfig.shorts()
     return VideoMaker(config).create(
         images, narration, output, audio=audio, music=music, typing_text=typing_text,
-        background=background, background_image=background_image,
+        background=background, background_image=background_image, voice=voice,
     )
