@@ -1,8 +1,8 @@
-# TivalVideo Offline 0.2.0
+# TivalVideo Offline 0.3.0
 
 Create narrated vertical Shorts or landscape videos from images, entirely offline after the first setup. TivalVideo uses a managed FFmpeg executable for video rendering and Piper for local AI narration.
 
-Version 0.2.0 adds auto-typing text videos, recorded audio, background music, four built-in backgrounds, and custom background images.
+Version 0.3.0 adds a downloadable narrator catalogue. Choose between American and British Piper voices, then create videos fully offline.
 
 ## Install
 
@@ -19,6 +19,51 @@ tivalvideo setup
 ```
 
 After setup, disconnect from the internet and create videos offline.
+
+## Narrator voices
+
+See all included voices and which ones are installed:
+
+```bash
+tivalvideo voices list
+```
+
+Install additional voices only when you need them:
+
+```bash
+tivalvideo voices install en_US-amy-medium
+tivalvideo voices install en_US-joe-medium
+tivalvideo voices install en_GB-alan-medium
+```
+
+Each medium voice is approximately 63 MB and stays cached for offline use.
+
+Choose a voice in Python:
+
+```python
+from tivalvideo import create_video
+
+create_video(
+    typing_text="The history of Python",
+    narration="Python was created by Guido van Rossum.",
+    voice="en_GB-alan-medium",
+    background="midnight",
+    output="python-history.mp4",
+)
+```
+
+Available narrator keys:
+
+- `en_US-lessac-medium` (default, American English)
+- `en_US-amy-medium` (American English)
+- `en_US-joe-medium` (American English)
+- `en_GB-alan-medium` (British English)
+
+The selected voice downloads automatically on first use. Remove an unused voice with:
+
+```bash
+tivalvideo voices remove en_US-amy-medium
+```
 
 ## Python example
 
@@ -102,6 +147,8 @@ tivalvideo create *.png -n narration.txt -o youtube.mp4 --landscape
 - Automatic fade transitions
 - H.264 video and AAC audio
 - Automatic voice-model caching
+- Selectable American and British narrator voices
+- Voice list, install, and remove commands
 - Auto-typing text animation
 - MP3/WAV recorded voice and background music
 - Built-in and user-provided auto-typing backgrounds
