@@ -41,6 +41,16 @@ def parser() -> argparse.ArgumentParser:
         "--voice", choices=VOICE_CATALOG, default=DEFAULT_VOICE,
         help="Piper narrator voice used for narration",
     )
+    narrate = commands.add_parser("narrate", help="add narration to an existing MP4")
+    narrate.add_argument("video", help="existing MP4 screen recording")
+    narrate.add_argument("-n", "--narration", help="text file containing narration")
+    narrate.add_argument("--audio", help="recorded narrator audio file")
+    narrate.add_argument("-o", "--output", default="narrated-video.mp4")
+    narrate.add_argument(
+        "--original-audio", choices=("replace", "mix", "duck"), default="duck"
+    )
+    narrate.add_argument("--original-volume", type=float, default=0.25)
+    narrate.add_argument("--voice", choices=VOICE_CATALOG, default=DEFAULT_VOICE)
     return root
 
 
@@ -61,7 +71,7 @@ def main() -> int:
             else:
                 removed = tools.remove_voice(args.voice)
                 print("Voice removed." if removed else "Voice was not installed.")
-        else:
+        elif args.command == "create":
             text = Path(args.narration).read_text(encoding="utf-8") if args.narration else None
             typing_text = args.typing_text
             if args.typing_file:
@@ -73,6 +83,12 @@ def main() -> int:
                 args.images, text, args.output, audio=args.audio, music=args.music,
                 typing_text=typing_text, background=args.background,
                 background_image=args.background_image, voice=args.voice,
+            )
+        else:
+            text = Path(args.narration).read_text(encoding="utf-8") if args.narration else None
+            VideoMaker().add_narration(
+                args.video, text, args.output, audio=args.audio, voice=args.voice,
+                original_audio=args.original_audio, original_volume=args.original_volume,
             )
         return 0
     except Exception as exc:  # noqa: BLE001 - CLI converts failures into readable messages

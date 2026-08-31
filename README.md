@@ -1,8 +1,47 @@
-# TivalVideo Offline 0.3.0
+# TivalVideo Offline 0.4.0
 
 Create narrated vertical Shorts or landscape videos from images, entirely offline after the first setup. TivalVideo uses a managed FFmpeg executable for video rendering and Piper for local AI narration.
 
-Version 0.3.0 adds a downloadable narrator catalogue. Choose between American and British Piper voices, then create videos fully offline.
+Version 0.4.0 can add AI narration or a recorded voice to existing MP4 screen recordings. Choose whether to replace, mix, or automatically duck the video's original sound.
+
+## Narrate a screen recording
+
+\`\`\`python
+from tivalvideo import add_narration
+
+add_narration(
+    video="screen-recording.mp4",
+    narration="Welcome. First, open the project folder.",
+    voice="en_US-lessac-medium",
+    original_audio="duck",
+    original_volume=0.25,
+    output="screen-recording-narrated.mp4",
+)
+\`\`\`
+
+Use your own MP3 or WAV recording instead:
+
+\`\`\`python
+add_narration(
+    video="screen-recording.mp4",
+    audio="my-voice.mp3",
+    original_audio="mix",
+    output="tutorial.mp4",
+)
+\`\`\`
+
+Audio modes:
+
+- \`replace\` removes the screen recording's original sound.
+- \`mix\` plays the original sound and narration together.
+- \`duck\` lowers the original sound while narration plays.
+
+\`\`\`bash
+tivalvideo narrate screen-recording.mp4 \\
+  --narration narration.txt \\
+  --original-audio duck \\
+  --output tutorial.mp4
+\`\`\`
 
 ## Install
 
@@ -153,6 +192,8 @@ tivalvideo create *.png -n narration.txt -o youtube.mp4 --landscape
 - MP3/WAV recorded voice and background music
 - Built-in and user-provided auto-typing backgrounds
 - Python API and terminal command
+- Narration for existing MP4 screen recordings
+- Replace, mix, or automatically duck original video audio
 
 ## Notes
 

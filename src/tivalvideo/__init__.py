@@ -1,10 +1,10 @@
 """Public API for TivalVideo Offline."""
 
-from .maker import VideoConfig, VideoError, VideoMaker, create_video
+from .maker import VideoConfig, VideoError, VideoMaker, add_narration, create_video
 from .tools import DEFAULT_VOICE, VOICE_CATALOG, ToolManager, VoiceSpec
 
 __all__ = [
     "DEFAULT_VOICE", "VOICE_CATALOG", "ToolManager", "VideoConfig", "VideoError",
-    "VideoMaker", "VoiceSpec", "create_video",
+    "VideoMaker", "VoiceSpec", "add_narration", "create_video",
 ]
-__version__ = "0.3.0"
+__version__ = "0.4.0"

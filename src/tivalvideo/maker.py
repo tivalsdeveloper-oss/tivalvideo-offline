@@ -114,6 +114,94 @@ class VideoMaker:
         self.progress(f"Created: {output_path}")
         return output_path
 
+    def add_narration(
+        self,
+        video: str | Path,
+        narration: str | None = None,
+        output: str | Path = "narrated-video.mp4",
+        *,
+        audio: str | Path | None = None,
+        voice: str = DEFAULT_VOICE,
+        original_audio: str = "duck",
+        original_volume: float = 0.25,
+    ) -> Path:
+        """Add AI narration or a recording to an existing MP4 video.
+
+        original_audio may be replace, mix, or duck. Ducking automatically
+        lowers the video's sound while the narrator speaks.
+        """
+        video_path = self._optional_file(video, "video")
+        audio_path = self._optional_file(audio, "audio")
+        if not narration and not audio_path:
+            raise ValueError("Add narration text or an audio file.")
+        if narration and audio_path:
+            raise ValueError("Use narration or audio, not both.")
+        if original_audio not in {"replace", "mix", "duck"}:
+            raise ValueError("original_audio must be: replace, mix, or duck.")
+        if not 0.0 <= original_volume <= 1.0:
+            raise ValueError("original_volume must be between 0.0 and 1.0.")
+        self.tools.select_voice(voice)
+        if narration and narration.strip() and not self.tools.ready(voice):
+            self.progress("Required offline voice is missing; running one-time setup.")
+            self.tools.setup(self.progress, voice=voice)
+        output_path = Path(output).expanduser().resolve()
+        if video_path == output_path:
+            raise ValueError("Output must be different from the input video.")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="tivalvideo-") as temp_name:
+            temp = Path(temp_name)
+            voice_audio = self._prepare_voice(narration, audio_path, temp, voice)
+            assert voice_audio is not None
+            mode = original_audio
+            if mode != "replace" and not self._has_audio_stream(video_path):
+                self.progress("Input video has no audio; using narration only.")
+                mode = "replace"
+            self._narrate_existing_video(
+                video_path, voice_audio, output_path, mode, original_volume
+            )
+        self.progress(f"Created: {output_path}")
+        return output_path
+
+    def _narrate_existing_video(
+        self, video: Path, narration: Path, output: Path,
+        mode: str, original_volume: float,
+    ) -> None:
+        self.progress(f"Adding narration in {mode} mode...")
+        if mode == "replace":
+            audio_filter = "[1:a]apad[a]"
+        elif mode == "mix":
+            audio_filter = (
+                f"[0:a]volume={original_volume}[original];"
+                "[1:a]apad[narration];"
+                "[original][narration]amix=inputs=2:duration=first:"
+                "dropout_transition=0[a]"
+            )
+        else:
+            audio_filter = (
+                f"[0:a]volume={original_volume}[original];"
+                "[1:a]apad,asplit=2[narration_side][narration_mix];"
+                "[original][narration_side]sidechaincompress="
+                "threshold=0.02:ratio=10:attack=20:release=500[ducked];"
+                "[ducked][narration_mix]amix=inputs=2:duration=first:"
+                "dropout_transition=0[a]"
+            )
+        self._run(
+            "-i", str(video), "-i", str(narration),
+            "-filter_complex", audio_filter,
+            "-map", "0:v:0", "-map", "[a]", "-c:v", "copy", "-c:a", "aac",
+            "-b:a", self.config.audio_bitrate, "-shortest",
+            "-movflags", "+faststart", str(output),
+        )
+
+    def _has_audio_stream(self, video: Path) -> bool:
+        command = [
+            str(self.tools.ffmpeg), "-v", "error", "-i", str(video),
+            "-map", "0:a:0", "-frames:a", "1", "-f", "null", "-",
+        ]
+        return subprocess.run(
+            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        ).returncode == 0
+
     def _prepare_voice(self, narration: str | None, audio: Path | None,
                        temp: Path, voice: str) -> Path | None:
         if narration and narration.strip():
@@ -317,4 +405,21 @@ def create_video(
     return VideoMaker(config).create(
         images, narration, output, audio=audio, music=music, typing_text=typing_text,
         background=background, background_image=background_image, voice=voice,
+    )
+
+
+def add_narration(
+    video: str | Path,
+    narration: str | None = None,
+    output: str | Path = "narrated-video.mp4",
+    *,
+    audio: str | Path | None = None,
+    voice: str = DEFAULT_VOICE,
+    original_audio: str = "duck",
+    original_volume: float = 0.25,
+) -> Path:
+    """Add narration to an existing MP4 without re-encoding its video stream."""
+    return VideoMaker().add_narration(
+        video, narration, output, audio=audio, voice=voice,
+        original_audio=original_audio, original_volume=original_volume,
     )

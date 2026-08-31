@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tivalvideo-offline"
-version = "0.3.0"
-description = "Create offline videos with selectable Piper narrator voices"
+version = "0.4.0"
+description = "Create offline videos and narrate existing screen recordings"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }

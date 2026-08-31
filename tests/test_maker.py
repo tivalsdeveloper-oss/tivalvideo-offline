@@ -10,6 +10,7 @@ from tivalvideo import (
     VideoConfig,
     VideoError,
     VideoMaker,
+    add_narration,
 )
 
 
@@ -94,3 +95,45 @@ def test_custom_background_is_cropped(tmp_path: Path):
     config = VideoConfig(width=64, height=96)
     canvas = VideoMaker(config)._background_canvas("midnight", source)
     assert canvas.size == (64, 96)
+
+
+def test_add_narration_requires_audio_source(tmp_path: Path):
+    video = tmp_path / "screen.mp4"
+    video.touch()
+    with pytest.raises(ValueError, match="narration text or an audio file"):
+        VideoMaker().add_narration(video)
+
+
+def test_add_narration_rejects_two_audio_sources(tmp_path: Path):
+    video = tmp_path / "screen.mp4"
+    audio = tmp_path / "voice.wav"
+    video.touch()
+    audio.touch()
+    with pytest.raises(ValueError, match="narration or audio"):
+        VideoMaker().add_narration(video, "hello", audio=audio)
+
+
+@pytest.mark.parametrize("mode", ["loud", "", "remove"])
+def test_add_narration_rejects_unknown_mode(tmp_path: Path, mode: str):
+    video = tmp_path / "screen.mp4"
+    audio = tmp_path / "voice.wav"
+    video.touch()
+    audio.touch()
+    with pytest.raises(ValueError, match="replace, mix, or duck"):
+        VideoMaker().add_narration(video, audio=audio, original_audio=mode)
+
+
+def test_add_narration_rejects_invalid_volume(tmp_path: Path):
+    video = tmp_path / "screen.mp4"
+    audio = tmp_path / "voice.wav"
+    video.touch()
+    audio.touch()
+    with pytest.raises(ValueError, match="between 0.0 and 1.0"):
+        VideoMaker().add_narration(video, audio=audio, original_volume=1.1)
+
+
+def test_public_add_narration_delegates():
+    with patch("tivalvideo.maker.VideoMaker.add_narration", return_value=Path("done.mp4")) as call:
+        result = add_narration("screen.mp4", audio="voice.mp3", original_audio="mix")
+    assert result == Path("done.mp4")
+    assert call.call_args.kwargs["original_audio"] == "mix"
