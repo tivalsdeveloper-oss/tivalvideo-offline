@@ -199,7 +199,7 @@ class VideoMaker:
             "-map", "0:a:0", "-frames:a", "1", "-f", "null", "-",
         ]
         return subprocess.run(
-            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            command, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         ).returncode == 0
 
     def _prepare_voice(self, narration: str | None, audio: Path | None,
